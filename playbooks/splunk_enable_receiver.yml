@@ -1,0 +1,25 @@
+---
+- hosts: tag_Type_Bastion
+  vars_files:
+      - creds/splunk_pass.yml
+  vars:
+      port: 9997
+      username: "ec2-user"
+  tasks:
+      - name: Check to see if Splunk is installed
+        become: yes
+        become_method: sudo
+        stat:
+          path: /opt/splunkforwarder/bin/splunk
+        register: splunk
+      - name: Enable Splunk receiver
+        become: yes
+        become_method: sudo
+        command: /opt/splunkforwarder/bin/splunk enable listen {{port}} -auth admin:{{splunk_pass}}
+        when: splunk.stat.exists
+        notify: Restart Splunk
+  handlers:
+      - name: Restart Splunk
+        become: yes
+        become_method: sudo
+        command: /opt/splunkforwarder/bin/splunk restart

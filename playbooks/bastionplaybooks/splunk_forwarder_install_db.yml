@@ -1,0 +1,116 @@
+---
+- hosts: tag_Type_DB
+  vars_files:
+    - config/splunk_pass.yml
+  vars:
+    splunk_package: "splunkforwarder-8.0.3-a6754d8441bf-linux-2.6-x86_64.rpm"
+    ip: "71.88.34.38"
+    fport: "9997"
+    dport: "8089"
+    username: "ec2-user"
+  tasks:
+
+    - name: Check if Splunk is already deployed
+      become: yes
+      become_method: sudo
+      stat:
+         path: /opt/splunkforwarder/bin/splunk
+      register: splunk
+
+    - name: Copy the Splunk Forwarder RPM to remote Servers
+      when: not splunk.stat.exists
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      copy:
+         src: /home/{{ username }}/{{splunk_package}}
+         dest: /home/{{ username }}/
+         owner: "{{ username }}"
+         group: "{{ username }}"
+         mode: 0644
+ 
+    - name: Install Splunk Forwarder RPM package on remote servers
+      when: not splunk.stat.exists
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      yum: state=present name={{ item }}
+      with_items:
+         - /home/{{ username }}/{{splunk_package}}
+              
+    - name: Copy user-seed.conf to remote servers
+      when: not splunk.stat.exists
+      become: yes
+      become_method: sudo
+      copy:
+         src: config/user-seed.conf
+         dest: /opt/splunkforwarder/etc/system/local/
+         owner: splunk
+         group: splunk
+         mode: 0644
+
+    - name: Start Splunk forwarder service.
+      when: not splunk.stat.exists
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      become_user: splunk
+      shell: /opt/splunkforwarder/bin/splunk start --accept-license
+      
+    - name: Enable Splunk for boot-start
+      when: not splunk.stat.exists
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      shell: /opt/splunkforwarder/bin/splunk enable boot-start
+
+    - name: Get bastion's private dns name
+      local_action: command hostname
+      register: bastion_dns
+
+    - name: Set forward-server
+      when: not splunk.stat.exists
+      become: yes
+      become_method: sudo
+      command: /opt/splunkforwarder/bin/splunk add forward-server -auth admin:{{splunk_pass}} {{ip}}:{{fport}}
+
+    - name: Set deployment server
+      when: not splunk.stat.exists
+      become: yes
+      become_method: sudo
+      command: /opt/splunkforwarder/bin/splunk set deploy-poll -auth admin:{{splunk_pass}} {{ip}}:{{dport}}
+
+    - name: Copy the inputs.conf from bastion to target servers
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      copy:
+        src: config/inputs.conf
+        dest: /opt/splunkforwarder/etc/system/local/
+        owner: splunk
+        group: splunk
+        mode: 0600
+    
+    - name: Restart Splunk
+      become: yes
+      become_method: sudo
+      command: /opt/splunkforwarder/bin/splunk restart
+        
+    - name: Check Splunk forwarder service.
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      command: /opt/splunkforwarder/bin/splunk status
+      register: service_splunk_status
+
+    - name: Report Splunk forwarder Status.
+      remote_user: "{{ username }}"
+      become: yes
+      become_method: sudo
+      debug:
+         var: service_splunk_status.stdout_lines
+
+    - name: Remove splunk package
+      file:
+         path: /home/{{username}}/{{splunk_package}}
+         state: absent

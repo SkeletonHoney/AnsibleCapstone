@@ -1,0 +1,48 @@
+---
+- hosts: tag_Name_capstoneBastion
+  vars:
+          username: "ec2-user"
+  tasks:
+          - name: Send playbook
+            copy:
+                    src: bastionplaybooks/splunk_forwarder_install_db.yml
+                    dest: /home/{{username}}/ansible/playbooks/
+                    mode: 0600
+
+          - name: Send splunk credentials
+            copy:
+                    src: config/splunk/user-seed.conf
+                    dest: /home/{{username}}/ansible/playbooks/config/
+                    mode: 0600
+
+          - name: Send user-seed.conf
+            copy:
+                    src: creds/splunk_pass.yml
+                    dest: /home/{{username}}/ansible/playbooks/config/
+                    mode: 0600 
+
+          - name: Send inputs.conf
+            copy:
+                    src: config/splunk/privateforwarder/inputs.conf
+                    dest: /home/{{username}}/ansible/playbooks/config/
+
+          - name: Execute playbook
+            command: ansible-playbook /home/{{username}}/ansible/playbooks/splunk_forwarder_install_db.yml
+            register: ansible_debug
+
+          - debug: msg="{{ansible_debug.stdout}}"
+          - debug: msg="{{ansible_debug.stdout}}"
+
+          - name: Delete config contents
+            file:
+                    path: /home/{{username}}/ansible/playbooks/config/{{item}}
+                    state: absent
+            with_items:
+                    - user-seed.conf
+                    - splunk_pass.yml
+                    - inputs.conf
+
+          - name: Delete playbook
+            file:
+                    path: /home/{{username}}/ansible/playbooks/splunk_forwarder_install_db.yml
+                    state: absent

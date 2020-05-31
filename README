@@ -1,0 +1,40 @@
+Used:
+AWS CLI
+Ansible
+Boto
+
+To set up:
+sudo yum install python-pip
+sudo pip install -U boto
+sudo pip install -U ansible
+sudo chmod 500 ec2.py ec2.sh
+
+Also, be sure to define your aws access key id and secret access key using:
+aws configure
+
+For Splunk configuration:
+Go into playbooks and create a file called splunk_pass.yml and put in the password 
+for the default splunk account.
+Go into playbooks/config/splunk and create a file called user-seed.conf and put in the 
+default splunk username and password. The format is given by user-seed.conf.format.
+Encrypt both files with the following command:
+ansible-vault encrypt FILENAME
+And put in a memorable password. To run splunk related playbooks, use:
+ansible-playbook --ask-vault-pass /path/to/playbook/
+
+A word about integrating Splunk in the CLI for automating blacklist updates:
+You will need a Splunk SDK to get search results in the CLI. These can be found here:
+https://dev.splunk.com/enterprise/downloads/
+In the case of this project, the Python SDK was used. This can be obtained using:
+git clone https://www.github.com/splunk/splunk-sdk-python.git
+Remember, you need to have a file called .splunkrc in your home directory which should 
+contain the following:
+host=localhost
+port=8089 (or whatever your deployment port is)
+username=(your username)
+password=(password for that username)
+
+You will also need to run:
+export PYTHONPATH=~/splunk-sdk-python/
+Be sure that points to where the splunk sdk directory. Although search.py is included
+in this project, you still need to git clone the sdk and export it's path to PYTHONPATH.

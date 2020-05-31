@@ -1,0 +1,14 @@
+---
+- hosts: tag_Type_DB
+  tasks: 
+        - name: install mariadb server
+          become: yes
+          yum: 
+                name: mariadb-server
+                state: present
+        - name: start mariadb server
+          become: yes
+          service:
+                name: mariadb
+                state: started
+                enabled: yes      

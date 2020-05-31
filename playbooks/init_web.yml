@@ -1,0 +1,39 @@
+---
+- hosts: tag_Type_Web
+  become: yes
+  tasks: 
+        - name: Install Apache server
+          become: yes
+          yum: 
+                name: httpd
+                state: present
+        - name: Install ModSecurity
+          become: yes
+          yum:
+                name: mod_security
+                state: present
+        - name: Deploy web content
+          copy:
+                directory_mode: yes
+                src: "web/test/"
+                dest: "/var/www/html/"
+          notify: Restart Apache
+        - name: Deploy httpd.conf
+          become: yes
+          become_method: sudo
+          copy:
+                src: config/web/httpd.conf
+                dest: /etc/httpd/conf/httpd.conf
+                mode: 0644
+          notify: Restart Apache
+        - name: Start and enable Apache server
+          become: yes
+          service:
+                name: httpd
+                state: started
+                enabled: yes
+  handlers:
+        - name: Restart Apache
+          service:
+                name: httpd
+                state: restarted

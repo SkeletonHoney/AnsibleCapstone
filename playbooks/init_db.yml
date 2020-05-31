@@ -1,0 +1,19 @@
+---
+- hosts: tag_Name_capstoneBastion
+  vars:
+          username: "ec2-user"
+  tasks:
+          - name: Send playbook
+            copy:
+                    src: bastionplaybooks/init_db.yml
+                    dest: /home/{{username}}/ansible/playbooks/
+                    mode: 0600
+          - name: Execute playbook
+            command: ansible-playbook /home/{{username}}/ansible/playbooks/init_db.yml
+            register: ansible_debug
+          - debug: msg="{{ansible_debug.stdout}}"
+          - debug: msg="{{ansible_debug.stderr}}"
+          - name: Delete playbook
+            file:
+                    path: /home/{{username}}/ansible/playbooks/init_db.yml
+                    state: absent

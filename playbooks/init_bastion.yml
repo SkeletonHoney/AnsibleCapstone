@@ -1,0 +1,73 @@
+---
+- hosts: tag_Type_Bastion
+  vars:
+      username: "ec2-user"
+  vars_files:
+    - creds/aws_creds.yml
+  tasks:
+    - name: Install Ansible
+      become: yes
+      become_method: sudo
+      command: amazon-linux-extras install ansible2 -y
+    - name: Yum install Python-pip
+      become: yes
+      become_method: sudo
+      yum:
+        name: python-pip
+        state: present
+    - name: Pip install Boto
+      become: yes
+      become_method: sudo
+      command: pip install boto
+    - name: Configure aws_access_key_id
+      command: aws configure set aws_access_key_id {{ access_key }}
+    - name: Configure aws_secret_access_key
+      command: aws configure set aws_secret_access_key {{ secret_key }}
+    - name: Check if ansible directory structure exists
+      stat:
+        path: /home/{{username}}/ansible
+      register: ansible_path
+    - name: Create a playbook directory
+      when: not ansible_path.stat.exists
+      file:
+        path: /home/{{username}}/ansible
+        state: directory
+    - name: Create playbooks directory
+      when: not ansible_path.stat.exists
+      file:
+        path: /home/{{username}}/ansible/playbooks
+        state: directory
+    - name: Create config directory
+      when: not ansible_path.stat.exists
+      file:
+        path: /home/{{username}}/ansible/playbooks/config
+        state: directory
+    - name: Send ec2.ini 
+      copy:
+        src: config/bastion/ec2.ini
+        dest: /home/{{username}}/ansible/
+        mode: 0600
+    - name: Send ec2.py
+      copy:
+        src: config/bastion/ec2.py
+        dest: /home/{{username}}/ansible/
+        mode: 0500
+    - name: Send ec2.sh
+      copy:
+        src: config/bastion/ec2.sh
+        dest: /home/{{username}}/ansible/
+        mode: 0500
+    - name: Send ansible.cfg
+      become: yes
+      become_method: sudo
+      copy:
+        src: config/bastion/ansible.cfg
+        dest: /home/{{username}}/.ansible.cfg
+        owner: "{{username}}"
+        group: "{{username}}"
+        mode: 0600
+    - name: Send bastion key file
+      copy:
+        src: creds/bastion
+        dest: /home/{{username}}/.ssh/
+        mode: 0400

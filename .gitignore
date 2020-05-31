@@ -1,0 +1,3 @@
+playbooks/creds/*.yml
+playbooks/creds/bastion
+playbooks/config/splunk/user-seed.conf
