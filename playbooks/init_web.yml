@@ -23,7 +23,22 @@
           become_method: sudo
           copy:
                 src: config/web/httpd.conf
-                dest: /etc/httpd/conf/httpd.conf
+                dest: /etc/httpd/conf/
+                mode: 0644
+          notify: Restart Apache
+        - name: Check for blacklist
+          become: yes
+          become_method: sudo
+          stat: 
+                path: /etc/httpd/conf/blacklist.conf
+          register: blacklist
+        - name: Deploy blacklist
+          when: not blacklist.stat.exists
+          become: yes
+          become_method: sudo
+          copy:
+                src: config/web/blacklist.conf
+                dest: /etc/httpd/conf/
                 mode: 0644
           notify: Restart Apache
         - name: Start and enable Apache server

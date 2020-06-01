@@ -1,0 +1,16 @@
+---
+- hosts: tag_Type_Web
+  tasks:
+          - name: Deploy blacklist
+            become: yes
+            become_method: sudo
+            copy:
+                    src: config/web/blacklist.conf
+                    dest: /etc/httpd/conf/
+                    mode: 0644
+            notify: Restart Apache
+  handlers:
+          - name: Restart Apache
+            service:
+                    name: httpd
+                    state: restarted
