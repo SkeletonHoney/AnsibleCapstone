@@ -5,7 +5,7 @@ do
 	SEARCH=$(python search.py "search HTTP NOT 403 earliest_time=-15s | stats count by clientip | where count > 75" \
 		| grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' \
 		| sed "s_^_Require expr %{HTTP:X-Forwarded-For} != '_") \
-		| sed "s_$_'_"
+		| sed "s/$/'/"
 	if [ ! -z "$SEARCH" ]
 	then
 		# Check if result is already contained in blacklist
