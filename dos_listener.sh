@@ -2,9 +2,10 @@
 while true
 do
 	# Search for DOS attack
-	SEARCH=$(python search.py "search HTTP OR SYN NOT 403 earliest_time=-15s | stats count by clientip | where count > 50" \
+	SEARCH=$(python search.py "search HTTP NOT 403 earliest_time=-15s | stats count by clientip | where count > 75" \
 		| grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' \
-		| sed 's/^/Require not ip /')
+		| sed "s_^_Require expr %{HTTP:X-Forwarded-For} != '_") \
+		| sed "s_$_'_"
 	if [ ! -z "$SEARCH" ]
 	then
 		# Check if result is already contained in blacklist
